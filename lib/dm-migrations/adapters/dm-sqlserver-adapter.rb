@@ -19,15 +19,24 @@ module DataMapper
       def storage_exists?(storage_name)
         select("SELECT name FROM sysobjects WHERE name LIKE ?", storage_name).first == storage_name
       end
+      
+      def quote_column(storage_name)
+        "'#{storage_name}'"
+      end
 
       # @api semipublic
       def field_exists?(storage_name, field_name)
-        result = select("SELECT c.name FROM sysobjects as o JOIN syscolumns AS c ON o.id = c.id WHERE o.name = #{quote_name(storage_name)} AND c.name LIKE ?", field_name).first
-        result ? result.field == field_name : false
+        sql = "SELECT c.name FROM sysobjects as o JOIN syscolumns AS c ON o.id = c.id WHERE o.name = #{quote_column(storage_name)} AND c.name LIKE ?"
+        result = select(sql, field_name).first
+        result ? result == field_name : false
       end
 
       module SQL #:nodoc:
 #        private  ## This cannot be private for current migrations
+
+        def add_column_statement
+          'ADD'
+        end
 
         # @api private
         def supports_serial?
